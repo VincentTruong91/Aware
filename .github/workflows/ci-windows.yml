@@ -1,0 +1,32 @@
+name: CI - Windows (Visual Studio / MSBuild)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (detect .sln or skip)
+        shell: pwsh
+        run: |
+          $sln = Get-ChildItem -Path . -Recurse -Filter *.sln -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($null -eq $sln) {
+            Write-Host "No .sln found. Checking for CMakeLists.txt..."
+            $cmake = Get-ChildItem -Path . -Recurse -Filter CMakeLists.txt -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($null -ne $cmake) {
+              Write-Host "Found CMake project at: $($cmake.FullName). This workflow only builds .sln on Windows. Create a CMake workflow to build CMake projects on Linux or modify this file." 
+              exit 0
+            }
+            Write-Host "No .sln or CMakeLists.txt found in repo. Skipping build."
+            exit 0
+          }
+
+          Write-Host "Found solution: $($sln.FullName)"
+          msbuild $sln.FullName /p:Configuration=Release /m

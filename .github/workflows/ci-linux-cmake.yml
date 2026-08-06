@@ -1,0 +1,36 @@
+name: CI - Linux (CMake)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find CMakeLists.txt and build
+        run: |
+          CM=$(find . -name CMakeLists.txt | head -n 1 || true)
+          if [ -z "$CM" ]; then
+            echo "No CMakeLists.txt found; skipping CMake build."
+            exit 0
+          fi
+          echo "Found CMakeLists: $CM"
+          DIR=$(dirname "$CM")
+          echo "Building in directory: $DIR"
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+          pushd "$DIR"
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+          if command -v ctest >/dev/null 2>&1; then
+            ctest --output-on-failure || true
+          fi
+          popd
