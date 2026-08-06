@@ -1,5 +1,9 @@
 name: CI - Windows (Visual Studio / MSBuild)
 
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ main ]
@@ -8,6 +12,28 @@ on:
   workflow_dispatch:
 
 jobs:
+  quick-check:
+    name: Quick check
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Quick configure (detect project)
+        shell: pwsh
+        run: |
+          $cmake = Get-ChildItem -Path . -Recurse -Filter CMakeLists.txt -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($null -eq $cmake) { Write-Host 'No CMakeLists.txt found; quick-check skipped.'; exit 0 }
+          $projDir = Split-Path $cmake.FullName -Parent
+          Push-Location $projDir
+          $buildDir = Join-Path $projDir 'build-quick'
+          if (-Not (Test-Path $buildDir)) { New-Item -ItemType Directory -Path $buildDir | Out-Null }
+          Write-Host "Configuring with CMake (Ninja) in $buildDir..."
+          cmake -S $projDir -B $buildDir -G 'Ninja' -A x64 -DCMAKE_BUILD_TYPE=Release
+          Write-Host 'Running ninja dry-run (fast)'
+          ninja -C $buildDir -n || true
+          Pop-Location
+
   build:
     runs-on: windows-latest
     steps:
