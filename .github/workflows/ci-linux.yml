@@ -18,16 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install minimal deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-
       - name: Configure (quick)
         run: cmake -S . -B build-quick -G Ninja -DCMAKE_BUILD_TYPE=Release
-
-      - name: Dry-run build (very fast)
-        run: ninja -C build-quick -n || true
 
   build:
     runs-on: ubuntu-latest
