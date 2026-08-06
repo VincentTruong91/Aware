@@ -29,7 +29,7 @@ jobs:
           $buildDir = Join-Path $projDir 'build-quick'
           if (-Not (Test-Path $buildDir)) { New-Item -ItemType Directory -Path $buildDir | Out-Null }
           Write-Host "Configuring with CMake (Ninja) in $buildDir..."
-          cmake -S $projDir -B $buildDir -G 'Ninja' -A x64 -DCMAKE_BUILD_TYPE=Release
+          cmake -S $projDir -B $buildDir -G 'Ninja' -DCMAKE_BUILD_TYPE=Release
           Pop-Location
 
   build:
